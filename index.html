@@ -3,10 +3,253 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Website</title>
+    <title>Aoyama798</title>
+    <div style="display: flex;">
+        <div style="display: flex;">
+            <a class="logo" href="https://aoyama798.icu/">
+             <img src="https://img.picgo.net/2024/09/06/-removebg-preview6451f720cbda2d5e.png" alt="aoyama798" width="60px" height="60px">
+             <div>aoyama798</div>
+            </a>
+        </div>
+        <nav>
+          <button>点我</button>
+         <button>点我</button>
+        </nav>
+    </div>
 </head>
+
 <body>
     <h1>Hello, GitHub Pages!</h1>
     <p>Welcome to my website.</p>
+</body>
+</html>
+
+
+
+<scritp>
+
+</scritp>
+
+
+
+
+<style>
+    img{
+        border-radius: 6px;
+    }     
+
+    body{
+        background-image:url('https://img.picgo.net/2024/09/06/0f0102b46ddf4a8bb1c3c4aa54536a3021ff8edaa80eb699.jpg');
+        background-repeat:no-repeat;
+        background-attachment:fixed;
+    }
+</style>
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片查看器</title>
+    <style>
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: rgba(0, 0, 0, 0.9);
+            background-color: #C0DAB7;
+        }
+
+        .modal-content {
+            margin: auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        .modal-content img {
+            max-width: 100%;
+            max-height: 100%;
+            cursor: grab;
+            position: absolute;
+            transition: 0.1s;
+            margin: 0px;
+            padding: 0px;
+        }
+
+        .close, .next, .prev {
+            position: absolute;
+            font-size: 1em;
+            transition: 0.3s;
+            z-index: 20;
+            cursor: pointer;
+        }
+
+        .close {
+            top: 2%;
+            left: 48%;
+        }
+
+        .next {
+            bottom: 2%;
+            right: 2%;
+        }
+
+        .prev {
+            bottom: 2%;
+            left: 2%;
+        }
+
+        .parent-box {
+            background-color: #e8e6e3;
+            border-radius: 12em;
+            padding: 8px;
+            cursor: pointer;
+        }
+
+        .parent-box:hover {
+            background-color: yellow;
+            font-size: 105%;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="myModal" class="modal">
+        <span class="close" onclick="closeModal()"> <div class="parent-box">✖️</div> </span>
+        <div id="modalContent" class="modal-content">
+            <img id="modalImg" src="">
+            <span class="next" onclick="nextImage()"> <div class="parent-box">⏭️</div> </span>
+            <span class="prev" onclick="prevImage()"> <div class="parent-box">⏮️</div> </span>
+        </div>
+    </div>
+
+    <script>
+        var images = document.getElementsByTagName("img");
+        var modal = document.getElementById("myModal");
+        var modalImg = document.getElementById("modalImg");
+        var currentIndex = 0;
+        var isDragging = false;
+        var startX, startY, startLeft, startTop;
+        var zoomLevel = 1;
+
+        for (var i = 0; i < images.length; i++) {
+            images[i].addEventListener("click", function() {
+                currentIndex = Array.from(images).indexOf(this);
+                openModal(this.src);
+            });
+        }
+
+        function openModal(src) {
+            modal.style.display = "block";
+            modalImg.src = src;
+            modalImg.style.left = "50%";
+            modalImg.style.top = "50%";
+            modalImg.style.transform = "translate(-50%, -50%) scale(1)";
+            zoomLevel = 1;
+        }
+
+        function closeModal() {
+            modal.style.display = "none";
+        }
+
+        function nextImage() {
+            currentIndex = (currentIndex + 1) % images.length;
+            modalImg.src = images[currentIndex].src;
+            modalImg.style.transform = "translate(-50%, -50%) scale(1)";
+            zoomLevel = 1;
+        }
+
+        function prevImage() {
+            currentIndex = (currentIndex - 1 + images.length) % images.length;
+            modalImg.src = images[currentIndex].src;
+            modalImg.style.transform = "translate(-50%, -50%) scale(1)";
+            zoomLevel = 1;
+        }
+
+        // Adding move feature
+        modalImg.addEventListener("mousedown", function(e) {
+            isDragging = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            var rect = modalImg.getBoundingClientRect();
+            startLeft = rect.left + rect.width / 2;
+            startTop = rect.top + rect.height / 2;
+            modalImg.style.cursor = "grabbing";
+        });
+
+        document.addEventListener("mousemove", function(e) {
+            if (!isDragging) return;
+            e.preventDefault();
+            var x = e.clientX - startX + startLeft;
+            var y = e.clientY - startY + startTop;
+            modalImg.style.left = x + "px";
+            modalImg.style.top = y + "px";
+            modalImg.style.transform = "translate(-50%, -50%) scale(" + zoomLevel + ")";
+        });
+
+        document.addEventListener("mouseup", function() {
+            isDragging = false;
+            modalImg.style.cursor = "grab";
+        });
+
+        // Adding zoom feature with mouse wheel
+        modalImg.addEventListener("wheel", function(e) {
+            e.preventDefault();
+            var delta = e.deltaY > 0 ? -0.1 : 0.1;
+            zoomLevel = Math.min(Math.max(0.5, zoomLevel + delta), 5); // Zoom level between 0.5 and 5
+            modalImg.style.transform = "translate(-50%, -50%) scale(" + zoomLevel + ")";
+        });
+
+        modal.addEventListener("click", function(event) {
+            if (event.target === modal) {
+                closeModal();
+            }
+        });
+
+        document.addEventListener("keydown", function(event) {
+            if (event.key === "Escape") {
+                closeModal();
+            } else if (event.key === "ArrowRight") {
+                nextImage();
+            } else if (event.key === "ArrowLeft") {
+                prevImage();
+            } else if (event.key === "ArrowUp") {
+                // 按↓查看上一张图片
+                prevImage();
+            } else if (event.key === "ArrowDown") {
+                // 按↑查看下一张图片
+                nextImage();
+            }
+        });
+
+document.addEventListener("keydown", function(event) {
+    if (event.ctrlKey && event.key === "i") {
+        // 按Ctrl+I查看或关闭第一张图片
+        if (modal.style.display === "block") {
+            closeModal(); // 如果已打开，则关闭
+        } else if (images.length > 0) {
+            currentIndex = 0;
+            openModal(images[currentIndex].src); // 如果未打开，则查看第一张图片
+        }
+    }
+});
+
+    </script>
 </body>
 </html>
