@@ -2,118 +2,314 @@
 <html lang="zh">
 <head>
   <meta charset="UTF-8">
-  <title>病人信息收集</title>
+  <title>病人信息管理</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 40px; }
-    form { margin-bottom: 20px; padding: 10px; border: 1px solid #ccc; width: 300px; border-radius: 8px; }
-    label { display: block; margin: 8px 0 4px; }
-    input { width: 95%; padding: 6px; margin-bottom: 10px; }
-    button { padding: 8px 16px; border: none; background: #4CAF50; color: white; cursor: pointer; border-radius: 5px; }
-    button:hover { background: #45a049; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { border: 1px solid #aaa; padding: 8px; text-align: center; }
-    th { background-color: #f2f2f2; }
-    .delete-btn {
-      background: #e74c3c;
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f5f7fa;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h2 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 20px;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      padding: 20px;
+      margin-bottom: 30px;
+    }
+
+    form {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      align-items: end;
+    }
+
+    label {
+      font-weight: bold;
+      color: #555;
+      margin-bottom: 5px;
+      display: block;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: 0.3s;
+    }
+
+    input:focus {
+      border-color: #3f72af;
+      outline: none;
+      box-shadow: 0 0 6px rgba(63,114,175,0.3);
+    }
+
+    input[required] {
+      border-left: 4px solid #f94144;
+    }
+
+    button {
+      padding: 10px 16px;
+      background: #3f72af;
       color: white;
       border: none;
-      padding: 5px 10px;
-      border-radius: 5px;
+      border-radius: 8px;
       cursor: pointer;
+      font-size: 14px;
+      transition: 0.3s;
     }
+
+    button:hover {
+      background: #2a4d75;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    th, td {
+      padding: 12px 15px;
+      text-align: center;
+      border-bottom: 1px solid #eee;
+    }
+
+    th {
+      background: #3f72af;
+      color: white;
+      font-weight: normal;
+    }
+
+    tr:hover {
+      background: #f1f7ff;
+    }
+
+    td input.editable {
+      border: none;
+      background: transparent;
+      width: 95%;
+      text-align: center;
+    }
+
+    td input.editable:focus {
+      background: #f1f7ff;
+      border: 1px solid #3f72af;
+      border-radius: 6px;
+    }
+
+    .danger {
+      background-color: #f94144 !important;
+      color: white !important;
+      font-weight: bold;
+    }
+
+    .action-btn {
+      padding: 6px 12px;
+      border-radius: 6px;
+      margin: 2px;
+      font-size: 13px;
+    }
+
+    .delete-btn {
+      background: #d62828;
+    }
+
     .delete-btn:hover {
-      background: #c0392b;
+      background: #a71c1c;
     }
+
+    .discharge-btn {
+      background: #38b000;
+    }
+
+    .discharge-btn:hover {
+      background: #287a00;
+    }
+
   </style>
 </head>
 <body>
+  <div class="container">
+    <h2>病人信息管理</h2>
 
-<h2>病人信息收集</h2>
-<form id="patientForm">
-  <label for="bed">床号:</label>
-  <input type="text" id="bed" required>
+    <!-- 表单 -->
+    <div class="card">
+      <form id="patientForm">
+        <div>
+          <label>床号 <span style="color:red">*</span></label>
+          <input type="text" id="bedNumber" required>
+        </div>
+        <div>
+          <label>姓名</label>
+          <input type="text" id="name">
+        </div>
+        <div>
+          <label>管床医生</label>
+          <input type="text" id="doctor">
+        </div>
+        <div>
+          <label>备注</label>
+          <input type="text" id="remark">
+        </div>
+        <button type="submit">提交</button>
+      </form>
+    </div>
 
-  <label for="admitDate">入院日期:</label>
-  <input type="date" id="admitDate" required>
+    <!-- 汇总表 -->
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th>床号</th>
+            <th>姓名</th>
+            <th>管床医生</th>
+            <th>入院日期</th>
+            <th>出院日期</th>
+            <th>病历提交日期</th>
+            <th>备注</th>
+            <th>状态</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="patientTable"></tbody>
+      </table>
+    </div>
+  </div>
 
-  <label for="dischargeDate">出院日期:</label>
-  <input type="date" id="dischargeDate">
+  <!-- Firebase -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+    import { getDatabase, ref, push, onValue, update, remove } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-database.js";
 
-  <button type="submit">添加</button>
-</form>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDAXDiMOzZhYJw60HsO47iFt_OuTGHY8-Y",
+      authDomain: "patient-ed38f.firebaseapp.com",
+      databaseURL: "https://patient-ed38f-default-rtdb.firebaseio.com",
+      projectId: "patient-ed38f",
+      storageBucket: "patient-ed38f.firebasestorage.app",
+      messagingSenderId: "871945702518",
+      appId: "1:871945702518:web:5b93500a0a0941a20c2357",
+      measurementId: "G-0BFKEDCZ2B"
+    };
 
-<h3>汇总列表</h3>
-<table>
-  <thead>
-    <tr>
-      <th>床号</th>
-      <th>入院日期</th>
-      <th>出院日期</th>
-      <th>操作</th>
-    </tr>
-  </thead>
-  <tbody id="patientList"></tbody>
-</table>
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
 
-<!-- Firebase (使用 v10 模块化写法) -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
-  import { getFirestore, collection, addDoc, deleteDoc, doc as firestoreDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+    // 表单提交
+    document.getElementById("patientForm").addEventListener("submit", function(e){
+      e.preventDefault();
+      const bedNumber = document.getElementById("bedNumber").value.trim();
+      const name = document.getElementById("name").value.trim();
+      const doctor = document.getElementById("doctor").value.trim();
+      const remark = document.getElementById("remark").value.trim();
 
-  // ⚠️ 替换成你自己的 firebaseConfig
-  const firebaseConfig = {
-    apiKey: "你的APIKEY",
-    authDomain: "xxx.firebaseapp.com",
-    projectId: "xxx",
-    storageBucket: "xxx.appspot.com",
-    messagingSenderId: "xxx",
-    appId: "xxx"
-  };
+      if(!bedNumber){
+        alert("床号为必填！");
+        return;
+      }
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-
-  const form = document.getElementById('patientForm');
-  const patientList = document.getElementById('patientList');
-
-  // 添加数据
-  form.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const bed = document.getElementById('bed').value;
-    const admitDate = document.getElementById('admitDate').value;
-    const dischargeDate = document.getElementById('dischargeDate').value;
-
-    await addDoc(collection(db, "patients"), {
-      bed,
-      admitDate,
-      dischargeDate
-    });
-
-    form.reset();
-  });
-
-  // 监听数据库
-  onSnapshot(collection(db, "patients"), (snapshot) => {
-    patientList.innerHTML = ""; // 清空表格
-    snapshot.forEach((snap) => {
-      const data = snap.data();
-      const row = patientList.insertRow();
-      row.insertCell(0).textContent = data.bed;
-      row.insertCell(1).textContent = data.admitDate;
-      row.insertCell(2).textContent = data.dischargeDate;
-
-      // 删除按钮
-      const delCell = row.insertCell(3);
-      const btn = document.createElement("button");
-      btn.textContent = "删除";
-      btn.className = "delete-btn";
-      btn.onclick = async () => {
-        await deleteDoc(firestoreDoc(db, "patients", snap.id));
+      const today = new Date().toISOString().split("T")[0];
+      const newPatient = {
+        bedNumber,
+        name,
+        doctor,
+        remark,
+        admissionDate: today,
+        dischargeDate: "",
+        submitDate: "",
+        status: "新病人"
       };
-      delCell.appendChild(btn);
-    });
-  });
-</script>
 
+      push(ref(db, "patients"), newPatient);
+
+      document.getElementById("patientForm").reset();
+    });
+
+    // 出院按钮
+    window.dischargePatient = function(key){
+      const today = new Date();
+      const dischargeDate = today.toISOString().split("T")[0];
+
+      const submitDateObj = new Date(today);
+      submitDateObj.setDate(today.getDate() + 2);
+      const submitDate = submitDateObj.toISOString().split("T")[0];
+
+      update(ref(db, "patients/" + key), {
+        dischargeDate,
+        submitDate,
+        status: "已出院"
+      });
+    };
+
+    // 删除按钮
+    window.deletePatient = function(key){
+      if(confirm("确定删除这条记录吗？")){
+        remove(ref(db, "patients/" + key));
+      }
+    };
+
+    // 编辑备注
+    document.addEventListener("change", function(e){
+      if(e.target.classList.contains("editable")){
+        const key = e.target.dataset.key;
+        const value = e.target.value;
+        update(ref(db, "patients/" + key), { remark: value });
+      }
+    });
+
+    // 渲染表格
+    const tableBody = document.getElementById("patientTable");
+    onValue(ref(db, "patients"), snapshot=>{
+      tableBody.innerHTML = "";
+      const data = snapshot.val();
+      if(data){
+        Object.entries(data).forEach(([key, patient])=>{
+          let submitClass = "";
+          if(patient.submitDate && patient.dischargeDate && patient.submitDate === patient.dischargeDate){
+            submitClass = "danger";
+          }
+
+          const row = `
+            <tr>
+              <td>${patient.bedNumber || ""}</td>
+              <td>${patient.name || ""}</td>
+              <td>${patient.doctor || ""}</td>
+              <td>${patient.admissionDate || ""}</td>
+              <td>${patient.dischargeDate || ""}</td>
+              <td class="${submitClass}">${patient.submitDate || ""}</td>
+              <td>
+                <input type="text" class="editable" data-key="${key}" value="${patient.remark || ""}">
+              </td>
+              <td>${patient.status || ""}</td>
+              <td>
+                <button class="action-btn discharge-btn" onclick="dischargePatient('${key}')">出院</button>
+                <button class="action-btn delete-btn" onclick="deletePatient('${key}')">删除</button>
+              </td>
+            </tr>
+          `;
+          tableBody.insertAdjacentHTML("beforeend", row);
+        });
+      }
+    });
+  </script>
 </body>
 </html>
