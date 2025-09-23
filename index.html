@@ -18,7 +18,7 @@
     }
 
     .container {
-      max-width: 1200px;
+      max-width: 1000px;
       margin: 0 auto;
     }
 
@@ -30,21 +30,27 @@
       margin-bottom: 30px;
     }
 
+    /* 表单布局优化 */
     form {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 15px;
-      align-items: end;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      justify-content: space-between;
+    }
+
+    form > div {
+      flex: 1 1 2; /* 最小宽度220px，平分空间 */
+      display: flex;
+      flex-direction: column;
     }
 
     label {
       font-weight: bold;
       color: #555;
       margin-bottom: 5px;
-      display: block;
     }
 
-    input, textarea, select {
+    input {
       width: 100%;
       padding: 10px;
       border: 1px solid #ccc;
@@ -53,7 +59,7 @@
       transition: 0.3s;
     }
 
-    input:focus, textarea:focus, select:focus {
+    input:focus {
       border-color: #3f72af;
       outline: none;
       box-shadow: 0 0 6px rgba(63,114,175,0.3);
@@ -72,6 +78,8 @@
       cursor: pointer;
       font-size: 14px;
       transition: 0.3s;
+      align-self: flex-end;
+      margin-top: 22px;
     }
 
     button:hover {
@@ -85,42 +93,55 @@
       border-radius: 12px;
       overflow: hidden;
       box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      table-layout: fixed;
     }
 
     th, td {
       padding: 12px 15px;
       text-align: center;
       border-bottom: 1px solid #eee;
+      vertical-align: top;
     }
 
     th {
       background: #3f72af;
       color: white;
       font-weight: normal;
-      cursor: pointer;
       user-select: none;
+      cursor: pointer;
+      position: relative;
+    }
+
+    th::after {
+      content: '';
+      position: absolute;
+      right: 8px;
+      font-size: 12px;
     }
 
     tr:hover {
       background: #f1f7ff;
     }
 
-    td input.editable, td select.editable, td textarea.editable {
+    td textarea.editable {
+      width: 95%;
+      padding: 6px;
       border: none;
       background: transparent;
-      width: 95%;
-      text-align: center;
-      resize: none;
+      resize: vertical;
+      overflow: hidden;
+      font-family: inherit;
+      font-size: 14px;
+      text-align: left;
+      white-space: pre-wrap;
+      word-break: break-word;
     }
 
-    td textarea.editable {
-      min-height: 40px;
-    }
-
-    td input.editable:focus, td select.editable:focus, td textarea.editable:focus {
+    td textarea.editable:focus {
       background: #f1f7ff;
       border: 1px solid #3f72af;
       border-radius: 6px;
+      outline: none;
     }
 
     .danger {
@@ -151,7 +172,6 @@
     .discharge-btn:hover {
       background: #287a00;
     }
-
   </style>
 </head>
 <body>
@@ -175,7 +195,7 @@
         </div>
         <div>
           <label>备注</label>
-          <textarea id="remark"></textarea>
+          <input type="text" id="remark">
         </div>
         <button type="submit">提交</button>
       </form>
@@ -183,7 +203,7 @@
 
     <!-- 汇总表 -->
     <div class="card">
-      <table>
+      <table id="patientTableElem">
         <thead>
           <tr>
             <th data-sort="bedNumber">床号</th>
@@ -193,7 +213,7 @@
             <th data-sort="dischargeDate">出院日期</th>
             <th>病历提交日期</th>
             <th>备注</th>
-            <th data-sort="status">状态</th>
+            <th>状态</th>
             <th>操作</th>
           </tr>
         </thead>
@@ -221,11 +241,12 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // 本地缓存排序
-    let patientsCache = [];
-    let currentSort = { field: null, asc: true };
+    function formatDateMMDD(dateStr){
+      if(!dateStr) return "";
+      const date = new Date(dateStr);
+      return String(date.getMonth()+1).padStart(2,'0') + '-' + String(date.getDate()).padStart(2,'0');
+    }
 
-    // 表单提交
     document.getElementById("patientForm").addEventListener("submit", function(e){
       e.preventDefault();
       const bedNumber = document.getElementById("bedNumber").value.trim();
@@ -247,15 +268,13 @@
         admissionDate: today,
         dischargeDate: "",
         submitDate: "",
-        status: "新病人"
+        status: "New"
       };
 
       push(ref(db, "patients"), newPatient);
-
       document.getElementById("patientForm").reset();
     });
 
-    // 出院按钮
     window.dischargePatient = function(key){
       const today = new Date();
       const dischargeDate = today.toISOString().split("T")[0];
@@ -271,28 +290,36 @@
       });
     };
 
-    // 删除按钮
     window.deletePatient = function(key){
       if(confirm("确定删除这条记录吗？")){
         remove(ref(db, "patients/" + key));
       }
     };
 
-    // 编辑单元格
     document.addEventListener("change", function(e){
       if(e.target.classList.contains("editable")){
         const key = e.target.dataset.key;
-        const field = e.target.dataset.field;
         const value = e.target.value;
-        update(ref(db, "patients/" + key), { [field]: value });
+        update(ref(db, "patients/" + key), { remark: value });
       }
     });
 
-    // 渲染表格
+    document.addEventListener("input", function(e){
+      if(e.target.tagName === "TEXTAREA" && e.target.classList.contains("editable")){
+        e.target.style.height = "auto";
+        e.target.style.height = e.target.scrollHeight + "px";
+      }
+    });
+
     const tableBody = document.getElementById("patientTable");
+    let patientData = {};
+    let sortState = {}; // 保存升序/降序状态
+
     function renderTable(data){
       tableBody.innerHTML = "";
-      data.forEach(([key, patient])=>{
+      if(!data) return;
+      Object.entries(data).forEach(([key, patient])=>{
+        patientData[key] = patient;
         let submitClass = "";
         if(patient.submitDate && patient.dischargeDate && patient.submitDate === patient.dischargeDate){
           submitClass = "danger";
@@ -300,19 +327,16 @@
 
         const row = `
           <tr>
-            <td><input type="text" class="editable" data-key="${key}" data-field="bedNumber" value="${patient.bedNumber || ""}"></td>
-            <td><input type="text" class="editable" data-key="${key}" data-field="name" value="${patient.name || ""}"></td>
-            <td><input type="text" class="editable" data-key="${key}" data-field="doctor" value="${patient.doctor || ""}"></td>
-            <td><input type="date" class="editable" data-key="${key}" data-field="admissionDate" value="${patient.admissionDate || ""}"></td>
-            <td><input type="date" class="editable" data-key="${key}" data-field="dischargeDate" value="${patient.dischargeDate || ""}"></td>
-            <td class="${submitClass}">${patient.submitDate || ""}</td>
-            <td><textarea class="editable" data-key="${key}" data-field="remark">${patient.remark || ""}</textarea></td>
+            <td>${patient.bedNumber || ""}</td>
+            <td>${patient.name || ""}</td>
+            <td>${patient.doctor || ""}</td>
+            <td>${formatDateMMDD(patient.admissionDate)}</td>
+            <td>${formatDateMMDD(patient.dischargeDate)}</td>
+            <td class="${submitClass}">${formatDateMMDD(patient.submitDate)}</td>
             <td>
-              <select class="editable" data-key="${key}" data-field="status">
-                <option value="新病人" ${patient.status==="新病人"?"selected":""}>新病人</option>
-                <option value="已出院" ${patient.status==="已出院"?"selected":""}>已出院</option>
-              </select>
+              <textarea class="editable" data-key="${key}" rows="2">${patient.remark || ""}</textarea>
             </td>
+            <td>${patient.status || ""}</td>
             <td>
               <button class="action-btn discharge-btn" onclick="dischargePatient('${key}')">出院</button>
               <button class="action-btn delete-btn" onclick="deletePatient('${key}')">删除</button>
@@ -323,44 +347,42 @@
       });
     }
 
-    // 监听数据
     onValue(ref(db, "patients"), snapshot=>{
-      const data = snapshot.val();
-      if(data){
-        patientsCache = Object.entries(data);
-        applySort();
-      } else {
-        tableBody.innerHTML = "";
-      }
+      patientData = snapshot.val() || {};
+      renderTable(patientData);
     });
 
-    // 排序功能
-    function applySort(){
-      if(currentSort.field){
-        patientsCache.sort((a,b)=>{
-          const valA = a[1][currentSort.field] || "";
-          const valB = b[1][currentSort.field] || "";
-          if(valA < valB) return currentSort.asc ? -1 : 1;
-          if(valA > valB) return currentSort.asc ? 1 : -1;
-          return 0;
-        });
-      }
-      renderTable(patientsCache);
-    }
+    // 排序功能，点击切换升/降序
+    const headers = document.querySelectorAll('#patientTableElem th[data-sort]');
+    headers.forEach(th=>{
+      th.addEventListener('click', ()=>{
+        const key = th.dataset.sort;
+        sortState[key] = !sortState[key]; // true升序 false降序
+        const sorted = Object.entries(patientData).sort((a,b)=>{
+          let valA = a[1][key] || "";
+          let valB = b[1][key] || "";
 
-    document.querySelectorAll("th[data-sort]").forEach(th=>{
-      th.addEventListener("click", ()=>{
-        const field = th.dataset.sort;
-        if(currentSort.field === field){
-          currentSort.asc = !currentSort.asc;
-        } else {
-          currentSort.field = field;
-          currentSort.asc = true;
-        }
-        applySort();
+          if(key.includes("Date")){
+            valA = new Date(valA).getTime() || 0;
+            valB = new Date(valB).getTime() || 0;
+          } else if(key === "bedNumber"){
+            valA = parseInt(valA) || 0;
+            valB = parseInt(valB) || 0;
+          } else {
+            valA = valA.toString();
+            valB = valB.toString();
+          }
+
+          if(sortState[key]){
+            return valA > valB ? 1 : -1; // 升序
+          } else {
+            return valA < valB ? 1 : -1; // 降序
+          }
+        });
+        const sortedData = Object.fromEntries(sorted);
+        renderTable(sortedData);
       });
     });
-
   </script>
 </body>
 </html>
