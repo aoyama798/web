@@ -10,18 +10,15 @@
       margin: 0;
       padding: 20px;
     }
-
     h2 {
       text-align: center;
       color: #333;
       margin-bottom: 20px;
     }
-
     .container {
       max-width: 1000px;
       margin: 0 auto;
     }
-
     .card {
       background: #fff;
       border-radius: 12px;
@@ -29,26 +26,22 @@
       padding: 20px;
       margin-bottom: 30px;
     }
-
     form {
       display: flex;
       flex-wrap: wrap;
       gap: 15px;
       justify-content: space-between;
     }
-
     form > div {
       flex: 1 1 2;
       display: flex;
       flex-direction: column;
     }
-
     label {
       font-weight: bold;
       color: #555;
       margin-bottom: 5px;
     }
-
     input {
       width: 100%;
       padding: 10px;
@@ -56,18 +49,16 @@
       border-radius: 8px;
       font-size: 14px;
       transition: 0.3s;
+      font-family: inherit;
     }
-
     input:focus {
       border-color: #3f72af;
       outline: none;
       box-shadow: 0 0 6px rgba(63,114,175,0.3);
     }
-
     input[required] {
       border-left: 4px solid #f94144;
     }
-
     button {
       padding: 10px 16px;
       background: #3f72af;
@@ -80,11 +71,9 @@
       align-self: flex-end;
       margin-top: 22px;
     }
-
     button:hover {
       background: #2a4d75;
     }
-
     table {
       width: 100%;
       border-collapse: collapse;
@@ -94,14 +83,13 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.08);
       table-layout: fixed;
     }
-
     th, td {
       padding: 12px 15px;
       text-align: center;
       border-bottom: 1px solid #eee;
       vertical-align: top;
+      word-wrap: break-word;
     }
-
     th {
       background: #3f72af;
       color: white;
@@ -110,263 +98,250 @@
       cursor: pointer;
       position: relative;
     }
-
     tr:hover {
       background: #f1f7ff;
     }
-
-    td input.editable, td textarea.editable {
+    td input.editable {
       width: 95%;
-      padding: 6px;
+      padding: 4px 6px;
       border: none;
       background: transparent;
-      font-family: inherit;
       font-size: 14px;
       text-align: center;
-      white-space: pre-wrap;
-      word-break: break-word;
     }
-
-    td textarea.editable {
-      resize: vertical;
-      overflow: hidden;
-      text-align: left;
-    }
-
-    td input.editable:focus, td textarea.editable:focus {
+    td input.editable:focus {
       background: #f1f7ff;
       border: 1px solid #3f72af;
       border-radius: 6px;
       outline: none;
     }
-
+    td .remark-editable {
+      width: 95%;
+      min-height: 40px;
+      padding: 4px 6px;
+      font-size: 14px;
+      text-align: left;
+      word-break: break-word;
+      white-space: pre-wrap;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      background: transparent;
+    }
+    td .remark-editable:focus {
+      border: 1px solid #3f72af;
+      background: #f1f7ff;
+      outline: none;
+    }
     .action-btn {
       padding: 6px 12px;
       border-radius: 6px;
       margin: 2px;
       font-size: 13px;
     }
-
     .delete-btn {
       background: #d62828;
     }
-
     .delete-btn:hover {
       background: #a71c1c;
     }
-
     .discharge-btn {
       background: #38b000;
     }
-
     .discharge-btn:hover {
       background: #287a00;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h2>病人信息管理</h2>
+<div class="container">
+  <h2>病人信息管理</h2>
 
-    <div class="card">
-      <form id="patientForm">
-        <div>
-          <label>床号 <span style="color:red">*</span></label>
-          <input type="text" id="bedNumber" required>
-        </div>
-        <div>
-          <label>姓名</label>
-          <input type="text" id="name">
-        </div>
-        <div>
-          <label>管床医生</label>
-          <input type="text" id="doctor">
-        </div>
-        <div>
-          <label>备注</label>
-          <input type="text" id="remark">
-        </div>
-        <button type="submit">提交</button>
-      </form>
-    </div>
-
-    <div class="card">
-      <table id="patientTableElem">
-        <thead>
-          <tr>
-            <th data-sort="bedNumber">床号</th>
-            <th>姓名</th>
-            <th data-sort="doctor">管床医生</th>
-            <th data-sort="admissionDate">入院日期</th>
-            <th data-sort="dischargeDate">出院日期</th>
-            <th>备注</th>
-            <th>状态</th>
-            <th>操作</th>
-          </tr>
-        </thead>
-        <tbody id="patientTable"></tbody>
-      </table>
-    </div>
+  <div class="card">
+    <form id="patientForm">
+      <div>
+        <label>床号 <span style="color:red">*</span></label>
+        <input type="text" id="bedNumber" required>
+      </div>
+      <div>
+        <label>姓名</label>
+        <input type="text" id="name">
+      </div>
+      <div>
+        <label>管床医生</label>
+        <input type="text" id="doctor">
+      </div>
+      <div>
+        <label>备注</label>
+        <input type="text" id="remark">
+      </div>
+      <button type="submit">提交</button>
+    </form>
   </div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
-    import { getDatabase, ref, push, onValue, update, remove } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-database.js";
+  <div class="card">
+    <table id="patientTableElem">
+      <thead>
+        <tr>
+          <th data-sort="bedNumber">床号</th>
+          <th>姓名</th>
+          <th data-sort="doctor">管床医生</th>
+          <th data-sort="admissionDate">入院日期</th>
+          <th data-sort="dischargeDate">出院日期</th>
+          <th>备注</th>
+          <th>状态</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody id="patientTable"></tbody>
+    </table>
+  </div>
+</div>
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyDAXDiMOzZhYJw60HsO47iFt_OuTGHY8-Y",
-      authDomain: "patient-ed38f.firebaseapp.com",
-      databaseURL: "https://patient-ed38f-default-rtdb.firebaseio.com",
-      projectId: "patient-ed38f",
-      storageBucket: "patient-ed38f.firebasestorage.app",
-      messagingSenderId: "871945702518",
-      appId: "1:871945702518:web:5b93500a0a0941a20c2357",
-      measurementId: "G-0BFKEDCZ2B"
-    };
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+import { getDatabase, ref, push, onValue, update, remove } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-database.js";
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+const firebaseConfig = {
+  apiKey: "AIzaSyDAXDiMOzZhYJw60HsO47iFt_OuTGHY8-Y",
+  authDomain: "patient-ed38f.firebaseapp.com",
+  databaseURL: "https://patient-ed38f-default-rtdb.firebaseio.com",
+  projectId: "patient-ed38f",
+  storageBucket: "patient-ed38f.firebasestorage.app",
+  messagingSenderId: "871945702518",
+  appId: "1:871945702518:web:5b93500a0a0941a20c2357",
+  measurementId: "G-0BFKEDCZ2B"
+};
 
-    function formatDateMMDD(dateStr){
-      if(!dateStr) return "";
-      const date = new Date(dateStr);
-      return String(date.getMonth()+1).padStart(2,'0') + '-' + String(date.getDate()).padStart(2,'0');
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// 表单提交
+document.getElementById("patientForm").addEventListener("submit", function(e){
+  e.preventDefault();
+  const bedNumber = document.getElementById("bedNumber").value.trim();
+  const name = document.getElementById("name").value.trim();
+  const doctor = document.getElementById("doctor").value.trim();
+  const remark = document.getElementById("remark").value.trim();
+  if(!bedNumber){ alert("床号为必填！"); return; }
+
+  const today = new Date().toISOString().split("T")[0];
+  const newPatient = {
+    bedNumber,
+    name,
+    doctor,
+    remark,
+    admissionDate: today,
+    dischargeDate: "",
+    status: "New"
+  };
+  push(ref(db, "patients"), newPatient);
+  document.getElementById("patientForm").reset();
+});
+
+// 出院按钮
+window.dischargePatient = function(key){
+  const today = new Date().toISOString().split("T")[0];
+  update(ref(db, "patients/" + key), {
+    dischargeDate: today,
+    status: "已出院"
+  });
+};
+
+// 删除按钮
+window.deletePatient = function(key){
+  if(confirm("确定删除这条记录吗？")){
+    remove(ref(db, "patients/" + key));
+  }
+};
+
+// 修改功能
+document.addEventListener("input", function(e){
+  if(e.target.classList.contains("editable")){
+    const key = e.target.dataset.key;
+    const field = e.target.dataset.field;
+    let value;
+    if(field === "remark"){
+      value = e.target.innerText;
+    } else {
+      value = e.target.value;
     }
+    update(ref(db, "patients/" + key), {[field]: value});
+  }
+});
 
-    document.getElementById("patientForm").addEventListener("submit", function(e){
-      e.preventDefault();
-      const bedNumber = document.getElementById("bedNumber").value.trim();
-      const name = document.getElementById("name").value.trim();
-      const doctor = document.getElementById("doctor").value.trim();
-      const remark = document.getElementById("remark").value.trim();
+const tableBody = document.getElementById("patientTable");
+let patientData = {};
+let sortState = {};
 
-      if(!bedNumber){
-        alert("床号为必填！");
-        return;
+function formatMMDD(dateStr){
+  if(!dateStr) return "";
+  return dateStr.slice(5);
+}
+
+function renderTable(data){
+  tableBody.innerHTML = "";
+  if(!data) return;
+  const today = new Date();
+  Object.entries(data).forEach(([key, patient])=>{
+    patientData[key] = patient;
+    let dischargeStyle = "";
+    if(patient.dischargeDate){
+      const dischargeDateObj = new Date(patient.dischargeDate);
+      dischargeDateObj.setDate(dischargeDateObj.getDate()+2);
+      if(today >= dischargeDateObj){
+        dischargeStyle = "background-color:#f94144; color:white;";
       }
-
-      const today = new Date().toISOString().split("T")[0];
-      const newPatient = {
-        bedNumber,
-        name,
-        doctor,
-        remark,
-        admissionDate: today,
-        dischargeDate: "",
-        status: "New"
-      };
-
-      push(ref(db, "patients"), newPatient);
-      document.getElementById("patientForm").reset();
-    });
-
-    window.dischargePatient = function(key){
-      const today = new Date();
-      const dischargeDate = today.toISOString().split("T")[0];
-
-      update(ref(db, "patients/" + key), {
-        dischargeDate,
-        status: "已出院"
-      });
-    };
-
-    window.deletePatient = function(key){
-      if(confirm("确定删除这条记录吗？")){
-        remove(ref(db, "patients/" + key));
-      }
-    };
-
-    document.addEventListener("change", function(e){
-      if(e.target.classList.contains("editable")){
-        const key = e.target.dataset.key;
-        const field = e.target.dataset.field;
-        const value = e.target.value;
-        const updateObj = {};
-        updateObj[field] = value;
-        update(ref(db, "patients/" + key), updateObj);
-      }
-    });
-
-    document.addEventListener("input", function(e){
-      if(e.target.tagName === "TEXTAREA" && e.target.classList.contains("editable")){
-        e.target.style.height = "auto";
-        e.target.style.height = e.target.scrollHeight + "px";
-      }
-    });
-
-    const tableBody = document.getElementById("patientTable");
-    let patientData = {};
-    let sortState = {};
-
-    function renderTable(data){
-      tableBody.innerHTML = "";
-      if(!data) return;
-      const today = new Date();
-
-      Object.entries(data).forEach(([key, patient])=>{
-        patientData[key] = patient;
-        let dischargeStyle = "";
-
-        if(patient.dischargeDate){
-          const dischargeDateObj = new Date(patient.dischargeDate);
-          dischargeDateObj.setDate(dischargeDateObj.getDate() + 2);
-          if(today >= dischargeDateObj){
-            dischargeStyle = "background-color:#f94144; color:white;";
-          }
-        }
-
-        const row = `
-          <tr>
-            <td><input class="editable" data-key="${key}" data-field="bedNumber" value="${patient.bedNumber || ''}"></td>
-            <td><input class="editable" data-key="${key}" data-field="name" value="${patient.name || ''}"></td>
-            <td><input class="editable" data-key="${key}" data-field="doctor" value="${patient.doctor || ''}"></td>
-            <td><input class="editable" data-key="${key}" data-field="admissionDate" type="date" value="${patient.admissionDate || ''}"></td>
-            <td><input class="editable" data-key="${key}" data-field="dischargeDate" type="date" style="${dischargeStyle}" value="${patient.dischargeDate || ''}"></td>
-            <td><textarea class="editable" data-key="${key}" data-field="remark" rows="2">${patient.remark || ''}</textarea></td>
-            <td>${patient.status || ''}</td>
-            <td>
-              <button class="action-btn discharge-btn" onclick="dischargePatient('${key}')">出院</button>
-              <button class="action-btn delete-btn" onclick="deletePatient('${key}')">删除</button>
-            </td>
-          </tr>
-        `;
-        tableBody.insertAdjacentHTML("beforeend", row);
-      });
     }
+    const row = `
+      <tr>
+        <td><input class="editable" data-key="${key}" data-field="bedNumber" value="${patient.bedNumber || ''}"></td>
+        <td><input class="editable" data-key="${key}" data-field="name" value="${patient.name || ''}"></td>
+        <td><input class="editable" data-key="${key}" data-field="doctor" value="${patient.doctor || ''}"></td>
+        <td><input class="editable" data-key="${key}" data-field="admissionDate" type="date" value="${patient.admissionDate || ''}" 
+             onfocus="this.type='date'" 
+             onblur="this.type='text'; this.value=this.value?this.value.slice(5):''" ></td>
+        <td><input class="editable" data-key="${key}" data-field="dischargeDate" type="date" value="${patient.dischargeDate || ''}" style="${dischargeStyle}" 
+             onfocus="this.type='date'" 
+             onblur="this.type='text'; this.value=this.value?this.value.slice(5):''" ></td>
+        <td><div class="remark-editable editable" contenteditable="true" data-key="${key}" data-field="remark">${patient.remark || ''}</div></td>
+        <td>${patient.status || ''}</td>
+        <td>
+          <button class="action-btn discharge-btn" onclick="dischargePatient('${key}')">出院</button>
+          <button class="action-btn delete-btn" onclick="deletePatient('${key}')">删除</button>
+        </td>
+      </tr>
+    `;
+    tableBody.insertAdjacentHTML("beforeend", row);
+  });
+}
 
-    onValue(ref(db, "patients"), snapshot=>{
-      patientData = snapshot.val() || {};
-      renderTable(patientData);
+// 监听数据库
+onValue(ref(db, "patients"), snapshot=>{
+  patientData = snapshot.val() || {};
+  renderTable(patientData);
+});
+
+// 排序功能
+const headers = document.querySelectorAll('#patientTableElem th[data-sort]');
+headers.forEach(th=>{
+  th.addEventListener('click', ()=>{
+    const key = th.dataset.sort;
+    sortState[key] = !sortState[key];
+    const sorted = Object.entries(patientData).sort((a,b)=>{
+      let valA = a[1][key] || "";
+      let valB = b[1][key] || "";
+      if(key.includes("Date")){
+        valA = new Date(valA).getTime() || 0;
+        valB = new Date(valB).getTime() || 0;
+      } else if(key==="bedNumber"){
+        valA = parseInt(valA) || 0;
+        valB = parseInt(valB) || 0;
+      } else valA = valA.toString(), valB = valB.toString();
+      return sortState[key] ? (valA>valB?1:-1) : (valA<valB?1:-1);
     });
-
-    // 排序
-    const headers = document.querySelectorAll('#patientTableElem th[data-sort]');
-    headers.forEach(th=>{
-      th.addEventListener('click', ()=>{
-        const key = th.dataset.sort;
-        sortState[key] = !sortState[key];
-        const sorted = Object.entries(patientData).sort((a,b)=>{
-          let valA = a[1][key] || "";
-          let valB = b[1][key] || "";
-
-          if(key.includes("Date")){
-            valA = new Date(valA).getTime() || 0;
-            valB = new Date(valB).getTime() || 0;
-          } else if(key === "bedNumber"){
-            valA = parseInt(valA) || 0;
-            valB = parseInt(valB) || 0;
-          } else {
-            valA = valA.toString();
-            valB = valB.toString();
-          }
-
-          return sortState[key] ? (valA > valB ? 1 : -1) : (valA < valB ? 1 : -1);
-        });
-        const sortedData = Object.fromEntries(sorted);
-        renderTable(sortedData);
-      });
-    });
-
-  </script>
+    renderTable(Object.fromEntries(sorted));
+  });
+});
+</script>
 </body>
 </html>
