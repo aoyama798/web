@@ -34,12 +34,12 @@
     form {
       display: flex;
       flex-wrap: wrap;
-      gap: 5px;
+      gap: 15px;
       justify-content: space-between;
     }
 
     form > div {
-      flex: 1 1 2; /* 最小宽度220px，平分空间 */
+      flex: 1 1 2;
       display: flex;
       flex-direction: column;
     }
@@ -110,13 +110,6 @@
       user-select: none;
       cursor: pointer;
       position: relative;
-    }
-
-    th::after {
-      content: '';
-      position: absolute;
-      right: 8px;
-      font-size: 12px;
     }
 
     tr:hover {
@@ -211,7 +204,6 @@
             <th data-sort="doctor">管床医生</th>
             <th data-sort="admissionDate">入院日期</th>
             <th data-sort="dischargeDate">出院日期</th>
-            <th>病历提交日期</th>
             <th>备注</th>
             <th>状态</th>
             <th>操作</th>
@@ -222,7 +214,6 @@
     </div>
   </div>
 
-  <!-- Firebase -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
     import { getDatabase, ref, push, onValue, update, remove } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-database.js";
@@ -267,7 +258,6 @@
         remark,
         admissionDate: today,
         dischargeDate: "",
-        submitDate: "",
         status: "New"
       };
 
@@ -279,13 +269,8 @@
       const today = new Date();
       const dischargeDate = today.toISOString().split("T")[0];
 
-      const submitDateObj = new Date(today);
-      submitDateObj.setDate(today.getDate() + 2);
-      const submitDate = submitDateObj.toISOString().split("T")[0];
-
       update(ref(db, "patients/" + key), {
         dischargeDate,
-        submitDate,
         status: "已出院"
       });
     };
@@ -313,16 +298,24 @@
 
     const tableBody = document.getElementById("patientTable");
     let patientData = {};
-    let sortState = {}; // 保存升序/降序状态
+    let sortState = {};
 
     function renderTable(data){
       tableBody.innerHTML = "";
       if(!data) return;
+
+      const today = new Date();
+
       Object.entries(data).forEach(([key, patient])=>{
         patientData[key] = patient;
-        let submitClass = "";
-        if(patient.submitDate && patient.dischargeDate && patient.submitDate === patient.dischargeDate){
-          submitClass = "danger";
+        let dischargeStyle = "";
+
+        if(patient.dischargeDate){
+          const dischargeDateObj = new Date(patient.dischargeDate);
+          dischargeDateObj.setDate(dischargeDateObj.getDate() + 2);
+          if(today >= dischargeDateObj){
+            dischargeStyle = "background-color:#f94144; color:white;";
+          }
         }
 
         const row = `
@@ -331,8 +324,7 @@
             <td>${patient.name || ""}</td>
             <td>${patient.doctor || ""}</td>
             <td>${formatDateMMDD(patient.admissionDate)}</td>
-            <td>${formatDateMMDD(patient.dischargeDate)}</td>
-            <td class="${submitClass}">${formatDateMMDD(patient.submitDate)}</td>
+            <td style="${dischargeStyle}">${formatDateMMDD(patient.dischargeDate)}</td>
             <td>
               <textarea class="editable" data-key="${key}" rows="2">${patient.remark || ""}</textarea>
             </td>
@@ -352,12 +344,12 @@
       renderTable(patientData);
     });
 
-    // 排序功能，点击切换升/降序
+    // 排序功能
     const headers = document.querySelectorAll('#patientTableElem th[data-sort]');
     headers.forEach(th=>{
       th.addEventListener('click', ()=>{
         const key = th.dataset.sort;
-        sortState[key] = !sortState[key]; // true升序 false降序
+        sortState[key] = !sortState[key];
         const sorted = Object.entries(patientData).sort((a,b)=>{
           let valA = a[1][key] || "";
           let valB = b[1][key] || "";
@@ -373,11 +365,7 @@
             valB = valB.toString();
           }
 
-          if(sortState[key]){
-            return valA > valB ? 1 : -1; // 升序
-          } else {
-            return valA < valB ? 1 : -1; // 降序
-          }
+          return sortState[key] ? (valA > valB ? 1 : -1) : (valA < valB ? 1 : -1);
         });
         const sortedData = Object.fromEntries(sorted);
         renderTable(sortedData);
