@@ -1,290 +1,119 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh">
 <head>
-    <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
-    <script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-analytics.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
-
-  // Your web app's Firebase configuration
-  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-  const firebaseConfig = {
-    apiKey: "AIzaSyDAXDiMOzZhYJw60HsO47iFt_OuTGHY8-Y",
-    authDomain: "patient-ed38f.firebaseapp.com",
-    databaseURL: "https://patient-ed38f-default-rtdb.firebaseio.com",
-    projectId: "patient-ed38f",
-    storageBucket: "patient-ed38f.firebasestorage.app",
-    messagingSenderId: "871945702518",
-    appId: "1:871945702518:web:5b93500a0a0941a20c2357",
-    measurementId: "G-0BFKEDCZ2B"
-  };
-
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
-</script>
-<script>
-    // 使用 Firebase 存储病人数据
-function getPatients() {
-    return database.ref('patients').once('value').then(snapshot => {
-        return snapshot.val() ? Object.values(snapshot.val()) : [];
-    }).catch(error => {
-        console.error('读取数据失败:', error);
-        return [];
-    });
-}
-
-function savePatients(patients) {
-    database.ref('patients').set(patients).catch(error => {
-        console.error('保存数据失败:', error);
-    });
-}
-
-// 添加病人（更新为异步）
-document.getElementById('patientForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    const bedNumber = document.getElementById('bedNumber').value;
-    const name = document.getElementById('name').value;
-    const dischargeDate = document.getElementById('dischargeDate').value;
-
-    if (!bedNumber || !name || !dischargeDate) return;
-
-    const patients = await getPatients();
-    patients.push({ bedNumber, name, dischargeDate });
-    await savePatients(patients);
-
-    // 清空表单
-    document.getElementById('bedNumber').value = '';
-    document.getElementById('name').value = '';
-    document.getElementById('dischargeDate').value = '';
-
-    renderPatients();  // 重新渲染
-});
-
-// 渲染函数（保持不变，但 getPatients 现在异步）
-async function renderPatients() {
-    const patients = await getPatients();
-    const list = document.getElementById('patientList');
-    list.innerHTML = '';
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    patients.forEach((patient, index) => {
-        const discharge = new Date(patient.dischargeDate);
-        discharge.setHours(0, 0, 0, 0);
-
-        const twoDaysAfter = new Date(discharge);
-        twoDaysAfter.setDate(twoDaysAfter.getDate() + 2);
-
-        if (discharge >= today) {
-            let reminder = '';
-            if (today.getTime() === discharge.getTime()) {
-                reminder = '（提醒：提交首页）';
-            } else if (today.getTime() === twoDaysAfter.getTime()) {
-                reminder = '（提醒：提交病案）';
-            } else if (discharge > today) {
-                reminder = `（待提醒：${patient.dischargeDate} 提交首页）`;
-            }
-
-            const div = document.createElement('div');
-            div.className = 'patient';
-            div.innerHTML = `
-                <p>床号: ${patient.bedNumber}</p>
-                <p>姓名: ${patient.name}</p>
-                <p>出院日期: ${patient.dischargeDate}</p>
-                <p class="reminder">${reminder}</p>
-                <button onclick="deletePatient(${index})">删除</button>
-            `;
-            list.appendChild(div);
-        }
-    });
-}
-
-// 删除病人（更新为异步）
-async function deletePatient(index) {
-    const patients = await getPatients();
-    patients.splice(index, 1);
-    await savePatients(patients);
-    renderPatients();
-}
-
-// 页面加载时渲染（异步）
-window.addEventListener('load', async () => {
-    await renderPatients();
-    // 弹出提醒逻辑保持不变，但 getPatients 异步
-    const patients = await getPatients();
-    // ... 其余 alert 逻辑相同
-});
-</script>
-    
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>病人出院提醒系统</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-        form {
-            margin-bottom: 20px;
-        }
-        input {
-            margin-right: 10px;
-            padding: 5px;
-        }
-        button {
-            padding: 5px 10px;
-        }
-        #patientList {
-            margin-top: 20px;
-        }
-        .patient {
-            border: 1px solid #ccc;
-            padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 5px;
-        }
-        .reminder {
-            color: red;
-            font-weight: bold;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>病人信息收集</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; }
+    form { margin-bottom: 20px; padding: 10px; border: 1px solid #ccc; width: 300px; border-radius: 8px; }
+    label { display: block; margin: 8px 0 4px; }
+    input { width: 95%; padding: 6px; margin-bottom: 10px; }
+    button { padding: 8px 16px; border: none; background: #4CAF50; color: white; cursor: pointer; border-radius: 5px; }
+    button:hover { background: #45a049; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #aaa; padding: 8px; text-align: center; }
+    th { background-color: #f2f2f2; }
+    .delete-btn {
+      background: #e74c3c;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .delete-btn:hover {
+      background: #c0392b;
+    }
+  </style>
 </head>
 <body>
-    <h1>病人信息录入</h1>
-    <form id="patientForm">
-        <label for="bedNumber">床号:</label>
-        <input type="text" id="bedNumber" required>
-        
-        <label for="name">姓名:</label>
-        <input type="text" id="name" required>
-        
-        <label for="dischargeDate">出院日期:</label>
-        <input type="date" id="dischargeDate" required>
-        
-        <button type="submit">录入</button>
-    </form>
-    
-    <h2>未来需要提醒的病人</h2>
-    <div id="patientList"></div>
-    
-    <script>
-        // 使用 localStorage 存储病人数据
-        function getPatients() {
-            return JSON.parse(localStorage.getItem('patients')) || [];
-        }
-        
-        function savePatients(patients) {
-            localStorage.setItem('patients', JSON.stringify(patients));
-        }
-        
-        // 添加病人
-        document.getElementById('patientForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const bedNumber = document.getElementById('bedNumber').value;
-            const name = document.getElementById('name').value;
-            const dischargeDate = document.getElementById('dischargeDate').value;
-            
-            if (!bedNumber || !name || !dischargeDate) return;
-            
-            const patients = getPatients();
-            patients.push({ bedNumber, name, dischargeDate });
-            savePatients(patients);
-            
-            // 清空表单
-            document.getElementById('bedNumber').value = '';
-            document.getElementById('name').value = '';
-            document.getElementById('dischargeDate').value = '';
-            
-            renderPatients();
-        });
-        
-        // 渲染未来需要提醒的病人
-        function renderPatients() {
-            const patients = getPatients();
-            const list = document.getElementById('patientList');
-            list.innerHTML = '';
-            
-            const today = new Date();
-            today.setHours(0, 0, 0, 0); // 今天零时
-            
-            patients.forEach((patient, index) => {
-                const discharge = new Date(patient.dischargeDate);
-                discharge.setHours(0, 0, 0, 0);
-                
-                const twoDaysAfter = new Date(discharge);
-                twoDaysAfter.setDate(twoDaysAfter.getDate() + 2);
-                
-                // 只显示未来需要提醒的病人（出院日期当天或出院后2天，且日期未过期）
-                if (discharge >= today) {
-                    let reminder = '';
-                    if (today.getTime() === discharge.getTime()) {
-                        reminder = '（提醒：提交首页）';
-                    } else if (today.getTime() === twoDaysAfter.getTime()) {
-                        reminder = '（提醒：提交病案）';
-                    } else if (discharge > today) {
-                        reminder = `（待提醒：${patient.dischargeDate} 提交首页）`;
-                    }
-                    
-                    const div = document.createElement('div');
-                    div.className = 'patient';
-                    div.innerHTML = `
-                        <p>床号: ${patient.bedNumber}</p>
-                        <p>姓名: ${patient.name}</p>
-                        <p>出院日期: ${patient.dischargeDate}</p>
-                        <p class="reminder">${reminder}</p>
-                        <button onclick="deletePatient(${index})">删除</button>
-                    `;
-                    list.appendChild(div);
-                }
-            });
-        }
-        
-        // 删除病人
-        function deletePatient(index) {
-            const patients = getPatients();
-            patients.splice(index, 1);
-            savePatients(patients);
-            renderPatients();
-        }
-        
-        // 页面加载时渲染
-        window.addEventListener('load', renderPatients);
-        
-        // 页面加载时弹出警报
-        window.addEventListener('load', function() {
-            const patients = getPatients();
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            
-            let alerts = [];
-            patients.forEach(patient => {
-                const discharge = new Date(patient.dischargeDate);
-                discharge.setHours(0, 0, 0, 0);
-                
-                const twoDaysAfter = new Date(discharge);
-                twoDaysAfter.setDate(twoDaysAfter.getDate() + 2);
-                
-                if (today.getTime() === discharge.getTime()) {
-                    alerts.push(`病人 ${patient.name} (床号: ${patient.bedNumber})：提交首页`);
-                } else if (today.getTime() === twoDaysAfter.getTime()) {
-                    alerts.push(`病人 ${patient.name} (床号: ${patient.bedNumber})：提交病案`);
-                }
-            });
-            
-            if (alerts.length > 0) {
-                alert(alerts.join('\n'));
-            }
-        });
-    </script>
-</body>
-    
-</html>
 
+<h2>病人信息收集</h2>
+<form id="patientForm">
+  <label for="bed">床号:</label>
+  <input type="text" id="bed" required>
+
+  <label for="admitDate">入院日期:</label>
+  <input type="date" id="admitDate" required>
+
+  <label for="dischargeDate">出院日期:</label>
+  <input type="date" id="dischargeDate">
+
+  <button type="submit">添加</button>
+</form>
+
+<h3>汇总列表</h3>
+<table>
+  <thead>
+    <tr>
+      <th>床号</th>
+      <th>入院日期</th>
+      <th>出院日期</th>
+      <th>操作</th>
+    </tr>
+  </thead>
+  <tbody id="patientList"></tbody>
+</table>
+
+<!-- Firebase (使用 v10 模块化写法) -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+  import { getFirestore, collection, addDoc, deleteDoc, doc as firestoreDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+
+  // ⚠️ 替换成你自己的 firebaseConfig
+  const firebaseConfig = {
+    apiKey: "你的APIKEY",
+    authDomain: "xxx.firebaseapp.com",
+    projectId: "xxx",
+    storageBucket: "xxx.appspot.com",
+    messagingSenderId: "xxx",
+    appId: "xxx"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const form = document.getElementById('patientForm');
+  const patientList = document.getElementById('patientList');
+
+  // 添加数据
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const bed = document.getElementById('bed').value;
+    const admitDate = document.getElementById('admitDate').value;
+    const dischargeDate = document.getElementById('dischargeDate').value;
+
+    await addDoc(collection(db, "patients"), {
+      bed,
+      admitDate,
+      dischargeDate
+    });
+
+    form.reset();
+  });
+
+  // 监听数据库
+  onSnapshot(collection(db, "patients"), (snapshot) => {
+    patientList.innerHTML = ""; // 清空表格
+    snapshot.forEach((snap) => {
+      const data = snap.data();
+      const row = patientList.insertRow();
+      row.insertCell(0).textContent = data.bed;
+      row.insertCell(1).textContent = data.admitDate;
+      row.insertCell(2).textContent = data.dischargeDate;
+
+      // 删除按钮
+      const delCell = row.insertCell(3);
+      const btn = document.createElement("button");
+      btn.textContent = "删除";
+      btn.className = "delete-btn";
+      btn.onclick = async () => {
+        await deleteDoc(firestoreDoc(db, "patients", snap.id));
+      };
+      delCell.appendChild(btn);
+    });
+  });
+</script>
+
+</body>
+</html>
