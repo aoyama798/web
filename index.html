@@ -1,256 +1,197 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aoyama798</title>
-    <frame src="https://jrenc.azurewebsites.net/api/signature?code=zHZRCCItO-yB8t7d2KyitELFDwADnXIotkeeIQL3juyNAzFucnyrWA%3D%3D&name=hello&animate=true&speed=1&color=%23000000"></frame>
-    <div style="display: flex;">
-        <div style="display: flex;">
-            <a class="logo" href="https://aoyama798.icu/">
-             <img src="https://img.picgo.net/2024/09/06/-removebg-preview6451f720cbda2d5e.png" alt="aoyama798" width="60px" height="60px">
-             <div>aoyama798</div>
-            </a>
-        </div>
-        <nav>
-          <button>点我</button>
-         <button>点我</button>
-        </nav>
-    </div>
-</head>
-
-<body>
-    <h1>Hello, GitHub Pages!</h1>
-    <p>Welcome to my website.</p>
-</body>
-</html>
-
-
-
-<scritp>
-
-</scritp>
-
-
-
-
-<style>
-    img{
-        border-radius: 6px;
-    }     
-
-    body{
-        background-image:url('https://img.picgo.net/2024/09/06/0f0102b46ddf4a8bb1c3c4aa54536a3021ff8edaa80eb699.jpg');
-        background-repeat:no-repeat;
-        background-attachment:fixed;
-    }
-</style>
-
-
-
-
-
-
-
-
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>图片查看器</title>
+    <title>病人出院提醒系统</title>
     <style>
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: rgba(0, 0, 0, 0.9);
-            background-color: #C0DAB7;
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
         }
-
-        .modal-content {
-            margin: auto;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 100%;
-            height: 100%;
+        form {
+            margin-bottom: 20px;
         }
-
-        .modal-content img {
-            max-width: 100%;
-            max-height: 100%;
-            cursor: grab;
-            position: absolute;
-            transition: 0.1s;
-            margin: 0px;
-            padding: 0px;
+        input {
+            margin-right: 10px;
+            padding: 5px;
         }
-
-        .close, .next, .prev {
-            position: absolute;
-            font-size: 1em;
-            transition: 0.3s;
-            z-index: 20;
-            cursor: pointer;
+        button {
+            padding: 5px 10px;
         }
-
-        .close {
-            top: 2%;
-            left: 48%;
+        #patientList {
+            margin-top: 20px;
         }
-
-        .next {
-            bottom: 2%;
-            right: 2%;
+        .patient {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
         }
-
-        .prev {
-            bottom: 2%;
-            left: 2%;
-        }
-
-        .parent-box {
-            background-color: #e8e6e3;
-            border-radius: 12em;
-            padding: 8px;
-            cursor: pointer;
-        }
-
-        .parent-box:hover {
-            background-color: yellow;
-            font-size: 105%;
+        .reminder {
+            color: red;
+            font-weight: bold;
         }
     </style>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js"></script>
 </head>
-
 <body>
-    <div id="myModal" class="modal">
-        <span class="close" onclick="closeModal()"> <div class="parent-box">✖️</div> </span>
-        <div id="modalContent" class="modal-content">
-            <img id="modalImg" src="">
-            <span class="next" onclick="nextImage()"> <div class="parent-box">⏭️</div> </span>
-            <span class="prev" onclick="prevImage()"> <div class="parent-box">⏮️</div> </span>
-        </div>
-    </div>
-
+    <h1>病人信息录入</h1>
+    <form id="patientForm">
+        <label for="bedNumber">床号:</label>
+        <input type="text" id="bedNumber" required>
+        
+        <label for="name">姓名:</label>
+        <input type="text" id="name" required>
+        
+        <label for="dischargeDate">出院日期:</label>
+        <input type="date" id="dischargeDate" required>
+        
+        <button type="submit">录入</button>
+    </form>
+    
+    <h2>未来需要提醒的病人</h2>
+    <div id="patientList"></div>
+    
     <script>
-        var images = document.getElementsByTagName("img");
-        var modal = document.getElementById("myModal");
-        var modalImg = document.getElementById("modalImg");
-        var currentIndex = 0;
-        var isDragging = false;
-        var startX, startY, startLeft, startTop;
-        var zoomLevel = 1;
+        // Initialize Firebase
+        const firebaseConfig = {
+            // 替换为你的 Firebase 配置
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
 
-        for (var i = 0; i < images.length; i++) {
-            images[i].addEventListener("click", function() {
-                currentIndex = Array.from(images).indexOf(this);
-                openModal(this.src);
-            });
-        }
-
-        function openModal(src) {
-            modal.style.display = "block";
-            modalImg.src = src;
-            modalImg.style.left = "50%";
-            modalImg.style.top = "50%";
-            modalImg.style.transform = "translate(-50%, -50%) scale(1)";
-            zoomLevel = 1;
-        }
-
-        function closeModal() {
-            modal.style.display = "none";
-        }
-
-        function nextImage() {
-            currentIndex = (currentIndex + 1) % images.length;
-            modalImg.src = images[currentIndex].src;
-            modalImg.style.transform = "translate(-50%, -50%) scale(1)";
-            zoomLevel = 1;
-        }
-
-        function prevImage() {
-            currentIndex = (currentIndex - 1 + images.length) % images.length;
-            modalImg.src = images[currentIndex].src;
-            modalImg.style.transform = "translate(-50%, -50%) scale(1)";
-            zoomLevel = 1;
-        }
-
-        // Adding move feature
-        modalImg.addEventListener("mousedown", function(e) {
-            isDragging = true;
-            startX = e.clientX;
-            startY = e.clientY;
-            var rect = modalImg.getBoundingClientRect();
-            startLeft = rect.left + rect.width / 2;
-            startTop = rect.top + rect.height / 2;
-            modalImg.style.cursor = "grabbing";
-        });
-
-        document.addEventListener("mousemove", function(e) {
-            if (!isDragging) return;
+        // 添加病人
+        document.getElementById('patientForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-            var x = e.clientX - startX + startLeft;
-            var y = e.clientY - startY + startTop;
-            modalImg.style.left = x + "px";
-            modalImg.style.top = y + "px";
-            modalImg.style.transform = "translate(-50%, -50%) scale(" + zoomLevel + ")";
-        });
-
-        document.addEventListener("mouseup", function() {
-            isDragging = false;
-            modalImg.style.cursor = "grab";
-        });
-
-        // Adding zoom feature with mouse wheel
-        modalImg.addEventListener("wheel", function(e) {
-            e.preventDefault();
-            var delta = e.deltaY > 0 ? -0.1 : 0.1;
-            zoomLevel = Math.min(Math.max(0.5, zoomLevel + delta), 5); // Zoom level between 0.5 and 5
-            modalImg.style.transform = "translate(-50%, -50%) scale(" + zoomLevel + ")";
-        });
-
-        modal.addEventListener("click", function(event) {
-            if (event.target === modal) {
-                closeModal();
+            const bedNumber = document.getElementById('bedNumber').value;
+            const name = document.getElementById('name').value;
+            const dischargeDate = document.getElementById('dischargeDate').value;
+            
+            if (!bedNumber || !name || !dischargeDate) return;
+            
+            try {
+                await db.collection('patients').add({
+                    bedNumber,
+                    name,
+                    dischargeDate,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                // 清空表单
+                document.getElementById('bedNumber').value = '';
+                document.getElementById('name').value = '';
+                document.getElementById('dischargeDate').value = '';
+                
+                renderPatients();
+            } catch (error) {
+                console.error('Error adding patient:', error);
+                alert('录入失败，请重试！');
             }
         });
-
-        document.addEventListener("keydown", function(event) {
-            if (event.key === "Escape") {
-                closeModal();
-            } else if (event.key === "ArrowRight") {
-                nextImage();
-            } else if (event.key === "ArrowLeft") {
-                prevImage();
-            } else if (event.key === "ArrowUp") {
-                // 按↓查看上一张图片
-                prevImage();
-            } else if (event.key === "ArrowDown") {
-                // 按↑查看下一张图片
-                nextImage();
+        
+        // 渲染未来需要提醒的病人
+        async function renderPatients() {
+            const list = document.getElementById('patientList');
+            list.innerHTML = '';
+            
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // 今天零时
+            
+            try {
+                const snapshot = await db.collection('patients')
+                    .orderBy('dischargeDate', 'asc')
+                    .get();
+                
+                snapshot.forEach(doc => {
+                    const patient = doc.data();
+                    const discharge = new Date(patient.dischargeDate);
+                    discharge.setHours(0, 0, 0, 0);
+                    
+                    const twoDaysAfter = new Date(discharge);
+                    twoDaysAfter.setDate(twoDaysAfter.getDate() + 2);
+                    
+                    // 只显示未来需要提醒的病人（出院日期当天或出院后2天，且日期未过期）
+                    if (discharge >= today) {
+                        let reminder = '';
+                        if (today.getTime() === discharge.getTime()) {
+                            reminder = '（提醒：提交首页）';
+                        } else if (today.getTime() === twoDaysAfter.getTime()) {
+                            reminder = '（提醒：提交病案）';
+                        } else if (discharge > today) {
+                            reminder = `（待提醒：${patient.dischargeDate} 提交首页）`;
+                        }
+                        
+                        const div = document.createElement('div');
+                        div.className = 'patient';
+                        div.innerHTML = `
+                            <p>床号: ${patient.bedNumber}</p>
+                            <p>姓名: ${patient.name}</p>
+                            <p>出院日期: ${patient.dischargeDate}</p>
+                            <p class="reminder">${reminder}</p>
+                            <button onclick="deletePatient('${doc.id}')">删除</button>
+                        `;
+                        list.appendChild(div);
+                    }
+                });
+            } catch (error) {
+                console.error('Error fetching patients:', error);
+                alert('获取病人数据失败，请重试！');
+            }
+        }
+        
+        // 删除病人
+        async function deletePatient(docId) {
+            try {
+                await db.collection('patients').doc(docId).delete();
+                renderPatients();
+            } catch (error) {
+                console.error('Error deleting patient:', error);
+                alert('删除失败，请重试！');
+            }
+        }
+        
+        // 页面加载时渲染
+        window.addEventListener('load', renderPatients);
+        
+        // 页面加载时弹出警报
+        window.addEventListener('load', async function() {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            let alerts = [];
+            try {
+                const snapshot = await db.collection('patients').get();
+                snapshot.forEach(doc => {
+                    const patient = doc.data();
+                    const discharge = new Date(patient.dischargeDate);
+                    discharge.setHours(0, 0, 0, 0);
+                    
+                    const twoDaysAfter = new Date(discharge);
+                    twoDaysAfter.setDate(twoDaysAfter.getDate() + 2);
+                    
+                    if (today.getTime() === discharge.getTime()) {
+                        alerts.push(`病人 ${patient.name} (床号: ${patient.bedNumber})：提交首页`);
+                    } else if (today.getTime() === twoDaysAfter.getTime()) {
+                        alerts.push(`病人 ${patient.name} (床号: ${patient.bedNumber})：提交病案`);
+                    }
+                });
+                
+                if (alerts.length > 0) {
+                    alert(alerts.join('\n'));
+                }
+            } catch (error) {
+                console.error('Error checking reminders:', error);
             }
         });
-
-document.addEventListener("keydown", function(event) {
-    if (event.ctrlKey && event.key === "i") {
-        // 按Ctrl+I查看或关闭第一张图片
-        if (modal.style.display === "block") {
-            closeModal(); // 如果已打开，则关闭
-        } else if (images.length > 0) {
-            currentIndex = 0;
-            openModal(images[currentIndex].src); // 如果未打开，则查看第一张图片
-        }
-    }
-});
-
     </script>
 </body>
 </html>
