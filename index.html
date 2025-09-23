@@ -30,7 +30,6 @@
       margin-bottom: 30px;
     }
 
-    /* 表单布局优化 */
     form {
       display: flex;
       flex-wrap: wrap;
@@ -116,31 +115,29 @@
       background: #f1f7ff;
     }
 
-    td textarea.editable {
+    td input.editable, td textarea.editable {
       width: 95%;
       padding: 6px;
       border: none;
       background: transparent;
-      resize: vertical;
-      overflow: hidden;
       font-family: inherit;
       font-size: 14px;
-      text-align: left;
+      text-align: center;
       white-space: pre-wrap;
       word-break: break-word;
     }
 
-    td textarea.editable:focus {
+    td textarea.editable {
+      resize: vertical;
+      overflow: hidden;
+      text-align: left;
+    }
+
+    td input.editable:focus, td textarea.editable:focus {
       background: #f1f7ff;
       border: 1px solid #3f72af;
       border-radius: 6px;
       outline: none;
-    }
-
-    .danger {
-      background-color: #f94144 !important;
-      color: white !important;
-      font-weight: bold;
     }
 
     .action-btn {
@@ -171,7 +168,6 @@
   <div class="container">
     <h2>病人信息管理</h2>
 
-    <!-- 表单 -->
     <div class="card">
       <form id="patientForm">
         <div>
@@ -194,7 +190,6 @@
       </form>
     </div>
 
-    <!-- 汇总表 -->
     <div class="card">
       <table id="patientTableElem">
         <thead>
@@ -284,8 +279,11 @@
     document.addEventListener("change", function(e){
       if(e.target.classList.contains("editable")){
         const key = e.target.dataset.key;
+        const field = e.target.dataset.field;
         const value = e.target.value;
-        update(ref(db, "patients/" + key), { remark: value });
+        const updateObj = {};
+        updateObj[field] = value;
+        update(ref(db, "patients/" + key), updateObj);
       }
     });
 
@@ -303,7 +301,6 @@
     function renderTable(data){
       tableBody.innerHTML = "";
       if(!data) return;
-
       const today = new Date();
 
       Object.entries(data).forEach(([key, patient])=>{
@@ -320,15 +317,13 @@
 
         const row = `
           <tr>
-            <td>${patient.bedNumber || ""}</td>
-            <td>${patient.name || ""}</td>
-            <td>${patient.doctor || ""}</td>
-            <td>${formatDateMMDD(patient.admissionDate)}</td>
-            <td style="${dischargeStyle}">${formatDateMMDD(patient.dischargeDate)}</td>
-            <td>
-              <textarea class="editable" data-key="${key}" rows="2">${patient.remark || ""}</textarea>
-            </td>
-            <td>${patient.status || ""}</td>
+            <td><input class="editable" data-key="${key}" data-field="bedNumber" value="${patient.bedNumber || ''}"></td>
+            <td><input class="editable" data-key="${key}" data-field="name" value="${patient.name || ''}"></td>
+            <td><input class="editable" data-key="${key}" data-field="doctor" value="${patient.doctor || ''}"></td>
+            <td><input class="editable" data-key="${key}" data-field="admissionDate" type="date" value="${patient.admissionDate || ''}"></td>
+            <td><input class="editable" data-key="${key}" data-field="dischargeDate" type="date" style="${dischargeStyle}" value="${patient.dischargeDate || ''}"></td>
+            <td><textarea class="editable" data-key="${key}" data-field="remark" rows="2">${patient.remark || ''}</textarea></td>
+            <td>${patient.status || ''}</td>
             <td>
               <button class="action-btn discharge-btn" onclick="dischargePatient('${key}')">出院</button>
               <button class="action-btn delete-btn" onclick="deletePatient('${key}')">删除</button>
@@ -344,7 +339,7 @@
       renderTable(patientData);
     });
 
-    // 排序功能
+    // 排序
     const headers = document.querySelectorAll('#patientTableElem th[data-sort]');
     headers.forEach(th=>{
       th.addEventListener('click', ()=>{
@@ -371,6 +366,7 @@
         renderTable(sortedData);
       });
     });
+
   </script>
 </body>
 </html>
