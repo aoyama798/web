@@ -13,7 +13,7 @@
     h2 {
       text-align: center;
       color: #333;
-      margin-bottom: 20px;
+      margin-bottom: 30px;
     }
     .container {
       max-width: 1000px;
@@ -82,7 +82,6 @@
       overflow: hidden;
       box-shadow: 0 4px 12px rgba(0,0,0,0.08);
       table-layout: fixed;
-      
     }
     th, td {
       padding: 12px 15px;
@@ -200,6 +199,7 @@
   display: flex;
   gap: 10px;
   margin-bottom: 15px;
+
 }
 
 #memo-input {
@@ -211,6 +211,7 @@
   font-family: inherit;
   resize: none;
   transition: 0.3s;
+  width:98%;
 }
 
 #memo-input:focus {
@@ -220,6 +221,9 @@
 }
 
 /* 添加按钮 */
+.memo-btn-wrapper {
+  text-align: center; /* 水平居中 */
+}
 .memo-add-btn {
   padding: 10px 16px;
   background: #3f72af;
@@ -229,6 +233,7 @@
   cursor: pointer;
   font-size: 14px;
   transition: 0.3s;
+  text-align: center;
 }
 
 .memo-add-btn:hover {
@@ -236,6 +241,7 @@
 }
 
 /* 备忘录列表 */
+    
 .memo-list {
   list-style: none;
   padding: 0;
@@ -266,17 +272,26 @@
   border-radius: 6px;
   font-size: 12px;
   color: white;
-  background: #a71c1c;
   border: none;
   cursor: pointer;
   transition: 0.3s;
+    background:#fffa75;
 }
 
 .memo-list li button:hover {
-  background: #e63946;
+  background:;
 }
 
   </style>
+
+
+
+
+
+
+
+
+  
 </head>
 <body>
 <div class="container">
@@ -327,14 +342,20 @@
       <tbody id="patientTable"></tbody>
     </table>
   </div>
-</div>
+
+  <!-- 备忘录模块 -->  
 <div id="memo-section">
-  <h3>备忘录</h3>
   <textarea id="memo-input" placeholder="写下需要记录的内容..." rows="3"></textarea>
-  <br>
+  <div class="memo-btn-wrapper">
   <button onclick="addMemo()">添加备忘</button>
+  </div>
   <ul id="memo-list"></ul>
 </div>
+
+  
+</div>
+
+
 
 
   
@@ -362,6 +383,14 @@
   </div>
 </div>
 
+
+
+
+
+
+
+  
+  
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
 import { getDatabase, ref, push, onValue, update, remove } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-database.js";
@@ -533,13 +562,12 @@ onValue(window.memosRef, (snapshot) => {
   Object.entries(data).forEach(([id, memo]) => {
     const li = document.createElement("li");
     li.innerHTML = `
+      <button onclick="deleteMemo('${id}')" style="background-color:#fffa75;color:black;">Done</button>
       <span>${memo.content}</span>
-      <button onclick="deleteMemo('${id}')">删除</button>
     `;
     list.appendChild(li);
   });
 });
-
 </script>
 </body>
 </html>
