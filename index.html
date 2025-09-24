@@ -2,7 +2,7 @@
 <html lang="zh">
 <head>
   <meta charset="UTF-8">
-  <title>病人信息管理</title>
+  <title>创二病人管理</title>
   <style>
     body {
       font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
@@ -43,7 +43,7 @@
       margin-bottom: 5px;
     }
     input {
-      width: 100%;
+      width: 80%;
       padding: 10px;
       border: 1px solid #ccc;
       border-radius: 8px;
@@ -82,6 +82,7 @@
       overflow: hidden;
       box-shadow: 0 4px 12px rgba(0,0,0,0.08);
       table-layout: fixed;
+      
     }
     th, td {
       padding: 12px 15px;
@@ -126,35 +127,64 @@
       border-radius: 6px;
       border: 1px solid transparent;
       background: transparent;
-    }
-    td .remark-editable:focus {
-      border: 1px solid #3f72af;
-      background: #f1f7ff;
-      outline: none;
+      cursor: pointer;
     }
     .action-btn {
       padding: 6px 12px;
       border-radius: 6px;
       margin: 2px;
       font-size: 13px;
+      color: white;
+      border: none;
+      cursor: pointer;
     }
-    .delete-btn {
-      background: #d62828;
+    .delete-btn { background: gray; }
+    .delete-btn:hover { background: #a71c1c; }
+    .discharge-btn { background: #808080; } /* 默认灰色 */
+    .discharge-btn.red { background: red !important; }
+    .discharge-btn:hover { background: #606060; }
+
+    /* 模态框 */
+    .remarkTextarea{
+      height:500px;
+      font-family: 微软雅黑;
+      font-size:1em;
     }
-    .delete-btn:hover {
-      background: #a71c1c;
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
     }
-    .discharge-btn {
-      background: #38b000;
+    .modal-content {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      width: 350px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
     }
-    .discharge-btn:hover {
-      background: #287a00;
+    .modal-content input[type="date"] {
+      padding: 10px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-family: inherit;
+    }
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
     }
   </style>
 </head>
 <body>
 <div class="container">
-  <h2>病人信息管理</h2>
+  <h2>创二病人管理系统-Aoyama</h2>
 
   <div class="card">
     <form id="patientForm">
@@ -180,13 +210,19 @@
 
   <div class="card">
     <table id="patientTableElem">
+    <colgroup>
+      <col style="width:12%">   <!-- 床号 (2) -->
+      <col style="width:18%">   <!-- 姓名 (3) -->
+      <col style="width:12%">    <!-- 管床医生 (1) -->
+      <col style="width:auto">  <!-- 备注 (auto) -->
+      <col style="width:12%">   <!-- 状态 (2) -->
+      <col style="width:12%">   <!-- 操作 (2) -->
+    </colgroup>
       <thead>
         <tr>
           <th data-sort="bedNumber">床号</th>
           <th>姓名</th>
-          <th data-sort="doctor">管床医生</th>
-          <th data-sort="admissionDate">入院日期</th>
-          <th data-sort="dischargeDate">出院日期</th>
+          <th data-sort="doctor">医生</th>
           <th>备注</th>
           <th>状态</th>
           <th>操作</th>
@@ -194,6 +230,30 @@
       </thead>
       <tbody id="patientTable"></tbody>
     </table>
+  </div>
+</div>
+
+<!-- 备注模态框 -->
+<div id="remarkModal" class="modal">
+  <div class="modal-content">
+    <h3>编辑备注</h3>
+    <textarea id="remarkTextarea" class="remarkTextarea"></textarea>
+    <div class="modal-actions">
+      <button onclick="closeRemarkModal()">取消</button>
+      <button onclick="saveRemark()">提交</button>
+    </div>
+  </div>
+</div>
+
+<!-- 出院日期选择模态框 -->
+<div id="dischargeModal" class="modal">
+  <div class="modal-content">
+    <h3>选择出院日期</h3>
+    <input type="date" id="dischargeDateInput">
+    <div class="modal-actions">
+      <button onclick="closeDischargeModal()">取消</button>
+      <button onclick="confirmDischarge()">确定</button>
+    </div>
   </div>
 </div>
 
@@ -215,7 +275,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// 表单提交
+// 新增患者
 document.getElementById("patientForm").addEventListener("submit", function(e){
   e.preventDefault();
   const bedNumber = document.getElementById("bedNumber").value.trim();
@@ -224,13 +284,11 @@ document.getElementById("patientForm").addEventListener("submit", function(e){
   const remark = document.getElementById("remark").value.trim();
   if(!bedNumber){ alert("床号为必填！"); return; }
 
-  const today = new Date().toISOString().split("T")[0];
   const newPatient = {
     bedNumber,
     name,
     doctor,
     remark,
-    admissionDate: today,
     dischargeDate: "",
     status: "New"
   };
@@ -238,14 +296,15 @@ document.getElementById("patientForm").addEventListener("submit", function(e){
   document.getElementById("patientForm").reset();
 });
 
-// 出院按钮
-window.dischargePatient = function(key){
-  const today = new Date().toISOString().split("T")[0];
-  update(ref(db, "patients/" + key), {
-    dischargeDate: today,
-    status: "已出院"
-  });
-};
+// 编辑单元格 → 保存到 Firebase
+document.addEventListener("input", function(e){
+  if(e.target.classList.contains("editable")){
+    const key = e.target.dataset.key;
+    const field = e.target.dataset.field;
+    const value = e.target.value;
+    update(ref(db, "patients/" + key), {[field]: value});
+  }
+});
 
 // 删除按钮
 window.deletePatient = function(key){
@@ -254,59 +313,37 @@ window.deletePatient = function(key){
   }
 };
 
-// 修改功能
-document.addEventListener("input", function(e){
-  if(e.target.classList.contains("editable")){
-    const key = e.target.dataset.key;
-    const field = e.target.dataset.field;
-    let value;
-    if(field === "remark"){
-      value = e.target.innerText;
-    } else {
-      value = e.target.value;
-    }
-    update(ref(db, "patients/" + key), {[field]: value});
-  }
-});
-
 const tableBody = document.getElementById("patientTable");
 let patientData = {};
-let sortState = {};
-
-function formatMMDD(dateStr){
-  if(!dateStr) return "";
-  return dateStr.slice(5);
-}
+let currentDischargeKey = null;
 
 function renderTable(data){
   tableBody.innerHTML = "";
   if(!data) return;
-  const today = new Date();
-  Object.entries(data).forEach(([key, patient])=>{
+
+  // 🔽 先排序
+  const sortedData = Object.entries(data).sort(([, a], [, b]) => {
+    return (parseInt(a.bedNumber, 10) || 0) - (parseInt(b.bedNumber, 10) || 0);
+  });
+
+  sortedData.forEach(([key, patient])=>{
     patientData[key] = patient;
-    let dischargeStyle = "";
+    let dischargeClass = "";
     if(patient.dischargeDate){
-      const dischargeDateObj = new Date(patient.dischargeDate);
-      dischargeDateObj.setDate(dischargeDateObj.getDate()+2);
-      if(today >= dischargeDateObj){
-        dischargeStyle = "background-color:#f94144; color:white;";
-      }
+      const today = new Date();
+      const dischargeDate = new Date(patient.dischargeDate);
+      const diffDays = Math.floor((today - dischargeDate)/(1000*60*60*24));
+      if(diffDays >= 2) dischargeClass = "red";
     }
     const row = `
       <tr>
         <td><input class="editable" data-key="${key}" data-field="bedNumber" value="${patient.bedNumber || ''}"></td>
         <td><input class="editable" data-key="${key}" data-field="name" value="${patient.name || ''}"></td>
         <td><input class="editable" data-key="${key}" data-field="doctor" value="${patient.doctor || ''}"></td>
-        <td><input class="editable" data-key="${key}" data-field="admissionDate" type="date" value="${patient.admissionDate || ''}" 
-             onfocus="this.type='date'" 
-             onblur="this.type='text'; this.value=this.value?this.value.slice(5):''" ></td>
-        <td><input class="editable" data-key="${key}" data-field="dischargeDate" type="date" value="${patient.dischargeDate || ''}" style="${dischargeStyle}" 
-             onfocus="this.type='date'" 
-             onblur="this.type='text'; this.value=this.value?this.value.slice(5):''" ></td>
-        <td><div class="remark-editable editable" contenteditable="true" data-key="${key}" data-field="remark">${patient.remark || ''}</div></td>
+        <td><div class="remark-editable" data-key="${key}" onclick="openRemarkModal('${key}')">${patient.remark || ''}</div></td>
         <td>${patient.status || ''}</td>
         <td>
-          <button class="action-btn discharge-btn" onclick="dischargePatient('${key}')">出院</button>
+          <button class="action-btn discharge-btn ${dischargeClass}" onclick="openDischargeModal('${key}')">出院</button>
           <button class="action-btn delete-btn" onclick="deletePatient('${key}')">删除</button>
         </td>
       </tr>
@@ -315,33 +352,45 @@ function renderTable(data){
   });
 }
 
-// 监听数据库
 onValue(ref(db, "patients"), snapshot=>{
   patientData = snapshot.val() || {};
   renderTable(patientData);
 });
 
-// 排序功能
-const headers = document.querySelectorAll('#patientTableElem th[data-sort]');
-headers.forEach(th=>{
-  th.addEventListener('click', ()=>{
-    const key = th.dataset.sort;
-    sortState[key] = !sortState[key];
-    const sorted = Object.entries(patientData).sort((a,b)=>{
-      let valA = a[1][key] || "";
-      let valB = b[1][key] || "";
-      if(key.includes("Date")){
-        valA = new Date(valA).getTime() || 0;
-        valB = new Date(valB).getTime() || 0;
-      } else if(key==="bedNumber"){
-        valA = parseInt(valA) || 0;
-        valB = parseInt(valB) || 0;
-      } else valA = valA.toString(), valB = valB.toString();
-      return sortState[key] ? (valA>valB?1:-1) : (valA<valB?1:-1);
-    });
-    renderTable(Object.fromEntries(sorted));
+// 出院模态框逻辑
+window.openDischargeModal = function(key){
+  currentDischargeKey = key;
+  document.getElementById("dischargeDateInput").value = "";
+  document.getElementById("dischargeModal").style.display = "flex";
+};
+window.closeDischargeModal = function(){
+  document.getElementById("dischargeModal").style.display = "none";
+};
+window.confirmDischarge = function(){
+  const dateValue = document.getElementById("dischargeDateInput").value;
+  if(!dateValue){ alert("请选择日期"); return; }
+  update(ref(db, "patients/" + currentDischargeKey), {
+    dischargeDate: dateValue,
+    status: "已出院"
   });
-});
+  closeDischargeModal();
+};
+
+// 备注模态框逻辑
+let currentRemarkKey = null;
+window.openRemarkModal = function(key){
+  currentRemarkKey = key;
+  document.getElementById("remarkTextarea").value = patientData[key].remark || "";
+  document.getElementById("remarkModal").style.display = "flex";
+};
+window.closeRemarkModal = function(){
+  document.getElementById("remarkModal").style.display = "none";
+};
+window.saveRemark = function(){
+  const value = document.getElementById("remarkTextarea").value;
+  update(ref(db, "patients/" + currentRemarkKey), {remark: value});
+  closeRemarkModal();
+};
 </script>
 </body>
 </html>
